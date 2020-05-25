@@ -1,5 +1,6 @@
 # pi-analytics
-An analytics stack on a dockerized raspberry pi.
+
+An analytics stack on a raspberry pi deployed in kubernetes.
 
 0. The environment - [k3s](https://github.com/rancher/k3s)
 and [k3sup](https://github.com/alexellis/k3sup)
