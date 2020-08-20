@@ -1,0 +1,52 @@
+x-airflow-environment: &airflow-environment
+  env_file: airflow.env
+  image: feluelle/pi-airflow:latest
+x-airflow-volumes: &airflow-volumes
+  volumes:
+    - ../../../2-orchestration:/opt/airflow/2-orchestration
+
+version: '3.8'
+services:
+  airflow-db:
+    image: library/postgres:latest
+    container_name: pi_airflow_db
+    env_file: postgres.env
+    ports:
+      - 45432:5432
+    restart: always
+  airflow-db-init:
+    <<: *airflow-environment
+    build:
+      context: https://github.com/apache/airflow.git
+      args:
+        PYTHON_BASE_IMAGE: python:3.8-slim-buster
+        PYTHON_MAJOR_MINOR_VERSION: 3.8
+        AIRFLOW_EXTRAS: postgres
+    container_name: pi_airflow_db_init
+    command: db upgrade
+    depends_on:
+      - airflow-db
+  airflow-users-init:
+    <<: *airflow-environment
+    container_name: pi_airflow_users_init
+    command: users create --role Admin --username airflow --email airflow@apache.org --firstname Airflow --lastname Apache --password airflow
+    depends_on:
+      - airflow-db-init
+  airflow-webserver:
+    <<: *airflow-environment
+    container_name: pi_airflow_webserver
+    command: webserver
+    ports:
+      - 48080:8080  # airflow webserver
+    <<: *airflow-volumes
+    depends_on:
+      - airflow-db-init
+    restart: always
+  airflow-scheduler:
+    <<: *airflow-environment
+    container_name: pi_airflow_scheduler
+    command: scheduler
+    <<: *airflow-volumes
+    depends_on:
+      - airflow-db-init
+    restart: always
